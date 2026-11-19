@@ -10,7 +10,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install pytest
       - run: python -m pytest -q
-      - run: python -m compileall -q report.py extractor.py widget.py
+      - run: python -m compileall -q report.py extractor.py api.py widget.py
   extractor:
     runs-on: windows-2022
     steps:

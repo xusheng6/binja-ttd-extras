@@ -78,7 +78,7 @@ class Report:
             raise
 
     def close(self):
-        if hasattr(self, '_map'):
+        if hasattr(self, '_map') and not self._map.closed:
             self._map.close()
         self._file.close()
 
@@ -147,12 +147,46 @@ class Report:
                                     string, flags, data, total, deref, bool(bits & 1), bool(bits & 2)))
         return result
 
-    def query(self, expression):
+    def query(self, expression, cancelled=None):
         terms = shlex.split(expression)
+        scoped = []
+        numeric = []
+        text = []
+        for term in terms:
+            key, sep, value = term.partition(':')
+            if sep and key in ('module', 'api'):
+                scoped.append((key, value.lower()))
+            elif sep and key in ('tid', 'ret', 'retaddr'):
+                numeric.append((key, value))
+            else:
+                text.append(term.lower().encode('utf-8'))
+        names = {}
+        data = self._map
         for index in range(self.call_count):
-            call = self.call(index)
-            if all(_matches(call, term) for term in terms):
-                yield index
+            if cancelled is not None and index % 4096 == 0 and cancelled():
+                return
+            (ret, tid, seq, steps, mod, api, param, search, count, search_len,
+             retaddr) = CALL.unpack_from(data, self.calls_off + index * CALL.size)
+            if numeric and not all(_numeric({'tid': tid, 'ret': ret, 'retaddr': retaddr}[key], value)
+                                   for key, value in numeric):
+                continue
+            if scoped:
+                matched = True
+                for key, value in scoped:
+                    offset = mod if key == 'module' else api
+                    if offset not in names:
+                        names[offset] = self._string(offset).lower()
+                    name = names[offset]
+                    if not (name.startswith(value[:-1]) if value.endswith('*') else name == value):
+                        matched = False
+                        break
+                if not matched:
+                    continue
+            if text:
+                haystack = self._blob(search, search_len)
+                if not all(needle in haystack for needle in text):
+                    continue
+            yield index
 
 
 def _numeric(value, condition):

@@ -42,3 +42,17 @@ def test_rejects_bad_region(tmp_path):
         pass
     else:
         assert False
+
+
+def test_real_style_api(tmp_path):
+    # Reuse the fixture generator while keeping the public API shape under test.
+    test_report_and_query(tmp_path)
+    from importlib import import_module
+    from sys import path
+    path.insert(0, str(Path(__file__).resolve().parents[2]))
+    api = import_module('binja-ttd-extras.api')
+    with api.TTDBehaviorReport(tmp_path / 'sample.ttdb') as report:
+        calls = list(report.query('api:WriteFile'))
+        assert len(calls) == 1
+        assert calls[0].position == '123:45'
+        assert calls[0].params[0].string == 'abc'

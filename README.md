@@ -10,9 +10,9 @@ Clone recursively into your Binary Ninja user plugin directory under `binja-ttd-
 git clone --recursive https://github.com/xusheng6/binja-ttd-extras.git binja-ttd-extras
 ```
 
-The plugin requires Binary Ninja with the Vector35 debugger plugin and Python UI support (PySide6). Open a binary and select **Tools → TTD Extras → Behavior**. Load an existing `.ttdb` report on any platform. Filter with terms such as `module:kernel32 api:WriteFile ret:!0`, inspect arguments, and double-click a call to time travel in the matching active TTD session.
+The plugin requires Binary Ninja with the Vector35 debugger plugin and Python UI support (PySide6). Open a binary and select the **TTD Behavior** sidebar icon. Load an existing `.ttdb` report on any platform. Use **+** to keep several independent query tabs against the same report. Filter with terms such as `module:kernel32 api:WriteFile ret:!0`, inspect arguments, and double-click a call to time travel in the matching active TTD session.
 
-On Windows, **Extract…** selects a `.run` trace and writes `<trace>.ttdb`. Build the submodule executable first (or copy the Windows CI artifact into `bin/`):
+On Windows, **Extract…** selects a `.run` trace and writes `<trace>.ttdb`. The sidebar displays progress and supports cancellation; cancellation preserves a valid partial report. Build the submodule executable first (or copy the Windows CI artifact into `bin/`):
 
 ```powershell
 cd ttd-capa\ttd
@@ -25,16 +25,16 @@ The plugin finds the build at `ttd-capa/ttd/bin/x64/Release/ttdcapa-extract.exe`
 The report reader is independent of Binary Ninja and can be used in Python:
 
 ```python
-from report import Report
-with Report('sample.ttdb') as report:
-    for index in report.query('api:CreateFileW'):
-        call = report.call(index)
-        print(call.position, call.api, report.parameters(call))
+from importlib import import_module
+TTDBehaviorReport = import_module("binja-ttd-extras.api").TTDBehaviorReport
+with TTDBehaviorReport('sample.ttdb') as report:
+    for call in report.query('api:CreateFileW'):
+        print(call.position, call.api, call.params)
 ```
 
 ## CI
 
-Linux CI tests the report reader and compiles the plugin Python. Windows CI builds and smoke tests the `ttd-capa` extractor, then publishes it as a workflow artifact. A real TTD trace and Binary Ninja installation are required for end-to-end UI testing.
+Linux CI tests the report reader and compiles the plugin Python. Windows CI builds and smoke tests the `ttd-capa` extractor, then publishes it as a workflow artifact. The sidebar and tab flow were tested in Binary Ninja 6.1.10951-dev on macOS with a synthetic report; the report reader and extractor smoke test were also run on the Windows 11 VM. A real TTD trace is still required to validate extraction and time travel end to end.
 
 ## License
 

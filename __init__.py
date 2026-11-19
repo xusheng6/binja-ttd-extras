@@ -1,8 +1,7 @@
-"""Binary Ninja TTD Behavior plugin."""
+"""Binary Ninja TTD Behavior sidebar plugin."""
 try:
-    from binaryninja import PluginCommand
-    from .widget import open_behavior
-    PluginCommand.register('TTD Extras\\Behavior', 'Browse Windows API calls from a TTD report', open_behavior)
+    import binaryninjaui  # noqa: F401
 except ImportError:
-    # Allow the report reader and extractor path logic to be used outside Binary Ninja.
     pass
+else:
+    from . import widget  # registers the sidebar when Binary Ninja loads the plugin
