@@ -2,6 +2,7 @@
 import os
 import subprocess
 import sys
+import tempfile
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
@@ -164,7 +165,8 @@ class BehaviorDialog(QDialog):
             return
         try:
             args = command(trace, output)
-            self.process = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+            self.extract_log = tempfile.TemporaryFile()
+            self.process = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=self.extract_log,
                                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             self.status.setText('Extracting…')
             self.poll = QTimer(self)
@@ -180,7 +182,9 @@ class BehaviorDialog(QDialog):
         if self.process.returncode == 0:
             self.load_report(output)
         else:
-            QMessageBox.critical(self, 'Extraction failed', self.process.stderr.read().decode('utf-8', 'replace')[-4000:])
+            self.extract_log.seek(0)
+            QMessageBox.critical(self, 'Extraction failed', self.extract_log.read().decode('utf-8', 'replace')[-4000:])
+        self.extract_log.close()
 
     def closeEvent(self, event):
         if self.process and self.process.poll() is None:
