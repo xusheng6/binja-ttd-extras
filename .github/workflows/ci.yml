@@ -29,10 +29,13 @@ jobs:
       - name: Smoke test
         working-directory: ttd-capa/ttd/bin/x64/Release
         run: ./ttdcapa-extract.exe --dump-sig CreateFileW
+      - name: Stage plugin extractor
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item ttd-capa/ttd/bin/x64/Release/ttdcapa-extract.exe dist/
+          Copy-Item ttd-capa/ttd/data/win32-index.bin dist/
       - uses: actions/upload-artifact@v4
         with:
           name: ttdcapa-extract-x64
-          path: |
-            ttd-capa/ttd/bin/x64/Release/ttdcapa-extract.exe
-            ttd-capa/ttd/data/win32-index.bin
+          path: dist/*
           if-no-files-found: error
