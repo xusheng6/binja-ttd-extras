@@ -1,4 +1,5 @@
 """Binary Ninja sidebar for extracted TTD API calls."""
+import ctypes
 import os
 import sys
 
@@ -205,10 +206,30 @@ class BehaviorPane(QWidget):
         except Exception as error:
             QMessageBox.warning(self, 'TTD navigation', str(error))
 
+    def active_trace_path(self):
+        try:
+            from debugger import DebuggerController
+            from debugger import _debuggercore as dbgcore
+            from binaryninja import Settings
+            from binaryninja import _binaryninjacore as bncore
+            controller = DebuggerController(self.bv)
+            if not controller.is_ttd:
+                return None
+            pointer = dbgcore.BNDebuggerGetAdapterSettings(controller.handle)
+            if not pointer:
+                return None
+            settings = Settings(handle=ctypes.cast(pointer, ctypes.POINTER(bncore.BNSettings)))
+            path = settings.get_string('launch.trace_path', self.bv)
+            return path if os.path.isfile(path) else None
+        except Exception:
+            return None
+
     def extract(self):
         if self.process and self.process.state() != QProcess.ProcessState.NotRunning:
             return
-        trace, _ = QFileDialog.getOpenFileName(self, 'Select TTD trace', '', 'TTD traces (*.run)')
+        trace = self.active_trace_path()
+        if not trace:
+            trace, _ = QFileDialog.getOpenFileName(self, 'Select TTD trace', '', 'TTD traces (*.run)')
         if not trace:
             return
         output = os.path.splitext(trace)[0] + '.ttdb'

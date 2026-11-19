@@ -12,7 +12,7 @@ git clone --recursive https://github.com/xusheng6/binja-ttd-extras.git binja-ttd
 
 The plugin requires Binary Ninja with the Vector35 debugger plugin and Python UI support (PySide6). Open a binary and select the **TTD Behavior** sidebar icon. Load an existing `.ttdb` report on any platform. Use **+** to keep several independent query tabs against the same report. Filter with terms such as `module:kernel32 api:WriteFile ret:!0`, inspect arguments, and double-click a call to time travel in the matching active TTD session.
 
-On Windows, **Extract…** selects a `.run` trace and writes `<trace>.ttdb`. The sidebar displays progress and supports cancellation; cancellation preserves a valid partial report. Build the submodule executable first (or copy the Windows CI artifact into `bin/`):
+On Windows, **Extract…** uses the active TTD session’s `.run` trace when available, or asks you to select one, then writes `<trace>.ttdb`. The sidebar displays progress and supports cancellation; cancellation preserves a valid partial report. Build the submodule executable first (or copy the Windows CI artifact into `bin/`):
 
 ```powershell
 cd ttd-capa\ttd
@@ -34,7 +34,7 @@ with TTDBehaviorReport('sample.ttdb') as report:
 
 ## CI
 
-Linux CI tests the report reader and compiles the plugin Python. Windows CI builds and smoke tests the `ttd-capa` extractor, then publishes it as a workflow artifact. The sidebar and tab flow were tested in Binary Ninja 6.1.10951-dev on macOS with a synthetic report; the report reader and extractor smoke test were also run on the Windows 11 VM. A real TTD trace is still required to validate extraction and time travel end to end.
+Linux CI tests the report reader and compiles the plugin Python. Windows CI builds and smoke tests the `ttd-capa` extractor, then publishes it as a workflow artifact. The sidebar and tab flow were tested in Binary Ninja 6.1.10951-dev on macOS. On the Windows 11 VM, a `whoami.exe` TTD trace was recorded and extracted into a 4,970-call report, which the reader queried on both Windows and macOS. Live TTD navigation inside Binary Ninja remains to be verified.
 
 ## License
 
